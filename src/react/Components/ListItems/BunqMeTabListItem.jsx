@@ -99,13 +99,20 @@ class BunqMeTabListItem extends React.Component {
         }, 0);
 
         // format the amounts
-        const formattedInquiredAmount = formatMoney(bunqMeTab.bunqme_tab_entry.amount_inquired.value);
-        const formattedTotalPaid = formatMoney(totalPaidAmount);
+        // fill with empty values first
+        let formattedInquiredAmount = formatMoney(0.00);
+        let formattedTotalPaid = formatMoney(0.00);
+        let merchantList = [];
 
-        const merchantList = bunqMeTab.bunqme_tab_entry.merchant_available
-            .filter(merchant => merchant.available)
-            .map(merchant => merchant.merchant_type)
-            .join(", ");
+        // only fill real values if tab isn't canceled, will crash otherwise
+        if (bunqMeTab.status !== 'CANCELLED' && bunqMeTab.bunqme_tab_entry !== null) {
+            formattedInquiredAmount = formatMoney(bunqMeTab.bunqme_tab_entry.amount_inquired.value);
+            formattedTotalPaid = formatMoney(totalPaidAmount);
+            merchantList = bunqMeTab.bunqme_tab_entry.merchant_available
+                .filter(merchant => merchant.available)
+                .map(merchant => merchant.merchant_type)
+                .join(", ");
+        }
 
         const avatarStandalone = (
             <Avatar style={styles.smallAvatar}>
@@ -126,6 +133,11 @@ class BunqMeTabListItem extends React.Component {
                 </Badge>
             );
 
+        const primaryText =
+            bunqMeTab.bunqme_tab_entry !== null
+                ? bunqMeTab.bunqme_tab_entry.description
+                : t("Cancelled payment request")
+
         const secondaryText =
             bunqMeTabPayments.length > 0
                 ? `${t("Received")}: ${formattedTotalPaid}`
@@ -134,7 +146,7 @@ class BunqMeTabListItem extends React.Component {
         return [
             <ListItem button onClick={this.toggleExtraInfo}>
                 {itemAvatar}
-                <ListItemText primary={bunqMeTab.bunqme_tab_entry.description} secondary={secondaryText} />
+                <ListItemText primary={primaryText} secondary={secondaryText} />
                 <ListItemSecondaryAction style={{ marginTop: -16 }}>
                     <AccountQRFullscreen mode="HIDDEN" text={shareUrl} />
                     <CopyToClipboardWrap text={shareUrl} onCopy={this.props.copiedValue("the bunq tab url")}>
